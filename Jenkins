@@ -1,0 +1,47 @@
+pipeline{
+    agent any
+    environment{
+        scannerHome = tool "mysonar"
+        Cloudname= credentials("CLOUDINARY_CLOUD_NAME")
+        Cloudkey= credentials("CLOUDINARY_KEY")
+        Cloudsecret= credentials("CLOUDINARY_SECRET")
+        Mapbox= credentials("MAPBOX_TOKEN")
+        DB= credentials("DB_URL")
+    }
+    stages{
+        stage ("cleanWS"){
+            steps{
+                cleanWs()
+            }
+        }
+        stage("code") {
+            steps{
+                git branch: 'main', url: 'https://github.com/Shaikbasha1301/3-Tier-Full-Stack-Camp.git'
+            }
+        }
+        stage ("CQA"){
+            steps{
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectName=camprb  -Dsonar.projectKey=camprb"
+                }
+            }
+        }
+        stage("quality gates"){
+            steps{
+                script{
+                    waitForQualityGate abortPipeline: false, credentialsId: 'mysonar'
+                }
+            }
+        }
+        stage ("build"){
+            steps{
+            sh "docker build -t basha10/newcamp:v1 ."
+        }
+        }
+        stage("deploy"){
+            steps{
+                sh 'docker run -itd --name recont -p 1234:3000 -e  CLOUDINARY_CLOUD_NAME=$Cloudname -e CLOUDINARY_KEY=$Cloudkey -e CLOUDINARY_SECRET=$Cloudsecret -e MAPBOX_TOKEN=$Mapbox -e DB_URL=$DB basha10/newcamp:v1'
+            }
+        }
+    }
+}
