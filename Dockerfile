@@ -1,5 +1,5 @@
-# Use Node 18 as parent image
-FROM node:18
+# Use Node 22 s parent image
+FROM node:22-alpine
 
 # Change the working directory on the Docker image to /app
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --production
 
 # Copy the rest of project files into this image
 COPY . .
